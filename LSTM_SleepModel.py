@@ -77,6 +77,9 @@ final_train_y = []
 final_val_X = []
 final_val_y = []
 
+#List to store the name of the ID Files using in the training and validation data
+ids = []
+
 # The function to window across the entire data; for example making 30 days window for a particpant to be used for LSTM model building
 def create_sequences(data, window_size):
     X, y = [], []
@@ -100,7 +103,7 @@ for id_file in os.listdir(data_path_processedData1_11_07): # Looping through all
         
     # Ignoring entire code if checkIn is not present
     except Exception as e: 
-        # print("CheckIn file not present!!")
+        #print(f"CheckIn file for {id_file} not present!!")
         count_checkin+=1
         continue
     # Reading the Sleep file for the entire data
@@ -118,7 +121,7 @@ for id_file in os.listdir(data_path_processedData1_11_07): # Looping through all
         sleep_file.drop_duplicates(inplace=True)
     # Ignore the entire code if sleep file not present
     except Exception as e:
-        # print("Sleep file not present!!")
+        #print(f"Sleep file for {id_file} not present!!")
         count_sleep+=1
         continue
     
@@ -128,7 +131,7 @@ for id_file in os.listdir(data_path_processedData1_11_07): # Looping through all
         # Columns to be selected for activity file. # Only using selected sleep columns for analysis
         activity_file = pd.read_csv(activity_data_path,usecols=['startTime','endDay','net_activity_calories','summary.avg_hr', 'activity_seconds'])
     except Exception as e:
-        # print('Activity File not Present')
+        #print(f'Activity File for {id_file} not Present')
         countr+=1
         continue
         
@@ -238,7 +241,7 @@ for id_file in os.listdir(data_path_processedData1_11_07): # Looping through all
     
     # Stopping the processing if the file contains less than 20 values
     if len(df)<file_check:
-        #print("Insufficient data points for training!!!")
+        print(f"Insufficient data points in {id_file} for training!!!")
         continue
         
     # # Filling Nan values with Mean
@@ -248,6 +251,9 @@ for id_file in os.listdir(data_path_processedData1_11_07): # Looping through all
     
     mean_awake_duration_awake_state = df['awake.duration_awake_state'].mean()
     df['awake.duration_awake_state'].fillna(mean_awake_duration_awake_state,inplace=True)
+    
+    #appending ID file name to list, as assuming at this point, that data from this point onward will be included in X and y. 
+    ids.append(id_file)
     
     # mean_asleep_duration_light_sleep_state = df['asleep.duration_light_sleep_state'].mean()
     # df['asleep.duration_light_sleep_state'].fillna(mean_asleep_duration_light_sleep_state,inplace=True)
@@ -287,18 +293,22 @@ for id_file in os.listdir(data_path_processedData1_11_07): # Looping through all
     #Converting the data into windowed data
     X, y = create_sequences(df, window_size)
     
-    # Appending all the lists together
-    final_train_X.append(X[:round(len(X)*0.70)]) #start at begninning and end at round(len(X)*0.70) exluded
+    # Splitting up the data into training and validation by row? 70/30 validation split by length. 
+    final_train_X.append(X[:round(len(X)*0.70)]) #start at first row and end at round(len(X)*0.70) exluded row
     final_train_y.append(y[:round(len(X)*0.70)]) 
     
     final_val_X.append(X[round(len(X)*0.70):])
-    final_val_y.append(y[round(len(X)*0.70):]) #start at round(len(X)*0.70) included until the end
+    final_val_y.append(y[round(len(X)*0.70):]) #start at round(len(X)*0.70) row included until the last row
 
 df['angry'].value_counts()
 df['positive'].value_counts()
 df['negative'].value_counts()
 df['neutral'].value_counts()
 df['awake.duration_awake_state'].value_counts()
+
+#printing the how many IDs will be using in the data set and printing the names of the IDs. 
+print(len(ids))
+print(ids)
 
 # Converting the lists into training and testing data
 y_train = [one_val for check in final_train_y for one_val in check]
@@ -314,8 +324,9 @@ y_val = np.array(y_val)
 X_val = [one_val for check in final_val_X for one_val in check]
 X_val = np.array(X_val)
 
-len(X_val)
-len(X_train)
+#print(X_val)
+print(len(X_val))
+print(len(X_train))
 
 # Dictionary representation of the mood classes for labeling
 
@@ -377,10 +388,10 @@ plt.show()
 # Checking the model using a testing file 
 other_id_file = '0a2466d5-3fdf-482a-979a-1ae37e2491cf'
 # data_path = '../23-08-02/Archive/processedData1/'
-other_data_path_processedData1_11_07 = '/Users/ayahamer/Library/CloudStorage/OneDrive-UniversityofWaterloo/3B/URA/2024-04-01/combinedData1/'
-other_check_in_data_path = '/Users/ayahamer/Library/CloudStorage/OneDrive-UniversityofWaterloo/3B/URA/2024-04-01/combinedData1/' + other_id_file + '/checkindf.csv'
-other_sleep_data_path = '/Users/ayahamer/Library/CloudStorage/OneDrive-UniversityofWaterloo/3B/URA/2024-04-01/combinedData1/' + other_id_file + '/sleepdf.csv'
-other_activity_data_path = '/Users/ayahamer/Library/CloudStorage/OneDrive-UniversityofWaterloo/3B/URA/2024-04-01/combinedData1/' + other_id_file + '/activitydf.csv'
+other_data_path_processedData1_11_07 = '/Users/ayahamer/Library/CloudStorage/OneDrive-UniversityofWaterloo/3B/URA/2024-04-01/'
+other_check_in_data_path = '/Users/ayahamer/Library/CloudStorage/OneDrive-UniversityofWaterloo/3B/URA/2024-04-01/' + other_id_file + '/checkindf.csv'
+other_sleep_data_path = '/Users/ayahamer/Library/CloudStorage/OneDrive-UniversityofWaterloo/3B/URA/2024-04-01/' + other_id_file + '/sleepdf.csv'
+other_activity_data_path = '/Users/ayahamer/Library/CloudStorage/OneDrive-UniversityofWaterloo/3B/URA/2024-04-01/' + other_id_file + '/activitydf.csv'
 
 # int_cols = df.drop(columns=labels).columns
 # df[int_cols] = scaler.transform(df[int_cols])
